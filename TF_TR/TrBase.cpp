@@ -2,7 +2,6 @@
 
 TrBase::TrBase(std::string iniPath, std::string group)
 {
-	//build();
 	fileProp.initByiniFile(iniPath, group);
 }
 

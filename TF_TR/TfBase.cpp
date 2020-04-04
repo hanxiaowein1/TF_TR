@@ -40,6 +40,23 @@ void TfBase::output(tensorflow::Tensor& tensorInput, vector<tensorflow::Tensor>&
 	}
 }
 
+void TfBase::Mat2Tensor(std::vector<cv::Mat>& imgs, tensorflow::Tensor& dstTensor)
+{
+	int size = imgs.size();
+	if (size == 0)
+		return;
+	int height = imgs[0].rows;
+	int width = imgs[0].cols;
+	int channel = imgs[0].channels();
+	for (int i = 0; i < size; i++)
+	{
+		float* ptr = dstTensor.flat<float>().data() + i * height * width * channel;
+		cv::Mat tensor_image(height, width, CV_32FC3, ptr);
+		imgs[i].convertTo(tensor_image, CV_32F);//转为float类型的数组
+		tensor_image = (tensor_image / 255 - 0.5) * 2;
+	}
+}
+
 void TfBase::output(std::vector<cv::Mat>& imgs, std::vector<tensorflow::Tensor>& Output)
 {
 	int size = imgs.size();
@@ -50,13 +67,7 @@ void TfBase::output(std::vector<cv::Mat>& imgs, std::vector<tensorflow::Tensor>&
 	int channel = imgs[0].channels();
 	tensorflow::Tensor tem_tensor_res(tensorflow::DataType::DT_FLOAT,
 		tensorflow::TensorShape({ size, height, width, channel }));
-	for (int i = 0; i < size; i++)
-	{
-		float* ptr = tem_tensor_res.flat<float>().data() + i * height * width * channel;
-		cv::Mat tensor_image(height, width, CV_32FC3, ptr);
-		imgs[i].convertTo(tensor_image, CV_32F);//转为float类型的数组
-		tensor_image = (tensor_image / 255 - 0.5) * 2;
-	}
+	Mat2Tensor(imgs, tem_tensor_res);
 	output(tem_tensor_res, Output);
 }
 

@@ -46,9 +46,10 @@ public:
 	void construct();
 public:
 	//普通函数
+	void Mat2Tensor(std::vector<cv::Mat>& imgs, tensorflow::Tensor& dstTensor);
 	//传入cv::Mat，得到Tensor输出
 	void output(std::vector<cv::Mat>& imgs, std::vector<tensorflow::Tensor>& Output);
-	//传入Tensor输入，得到Tensor输出
+	//传入Tensor输入，得到Tensor输出(其中tensorInput是batchsize个图像的集合体)
 	void output(tensorflow::Tensor& tensorInput, vector<tensorflow::Tensor>& tensorOutput);
 };
 

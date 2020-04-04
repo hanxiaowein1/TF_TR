@@ -16,7 +16,6 @@ int main()
 	img = (img / 255 - 0.5) * 2;
 	vector<cv::Mat> imgs;
 	imgs.emplace_back(img);
-	//vector<model1Result> results = model1->model1Process(imgs);
 	model1->process(imgs);
 	vector<model1Result> results = model1->m_results;
 	system("pause");
