@@ -103,3 +103,55 @@ void TfModel1::convertMat2NeededDataInBatch(std::vector<cv::Mat>& imgs)
 	//5.通过条件变量通知另一个等待线程：队列里有数据了！
 	tensor_queue_cv.notify_one();
 }
+
+//这样就处理完了，先测试一下
+void TfModel1::processTfModel1(std::vector<cv::Mat>& imgs)
+{
+	m_results.clear();
+	std::function<void(std::vector<cv::Mat>&)> mat2tensor_fun = std::bind(&TfModel1::convertMat2NeededDataInBatch,this, std::placeholders::_1);
+	auto task = std::make_shared<std::packaged_task<void()>>
+		(std::bind(&TfModel1::process2, this, std::ref(imgs), mat2tensor_fun));
+	std::unique_lock<std::mutex> myGuard(m_lock);
+	tasks.emplace(
+		[task]() {
+			(*task)();
+		}
+	);
+	m_lock.unlock();
+	cv_task.notify_one();
+
+	//然后从tensorQueue不停的取元素进行运行
+	//通过imgs/batchsize可得到循环次数
+	int loopTime = std::ceil(float(imgs.size()) / float(inputProp.batchsize));
+	for (int i = 0; i < loopTime; i++)
+	{
+		//取得锁
+		std::unique_lock<std::mutex> myGuard(queue_lock);
+		//判断队列是否为空
+		if (!tensorQueue.empty())
+		{
+			tensorflow::Tensor tensorInput = std::move(tensorQueue.front());
+			tensorQueue.pop();
+			vector<tensorflow::Tensor> outputTensors;
+			output(tensorInput, outputTensors);
+			vector<model1Result> tempResults = resultOutput(outputTensors);
+			m_results.insert(m_results.end(), tempResults.begin(), tempResults.end());
+		}
+		else
+		{
+			//等待
+			tensor_queue_cv.wait(myGuard, [this]{
+				if (tensorQueue.size() > 0)
+					return true;
+				else
+					return false;
+			});
+			tensorflow::Tensor tensorInput = std::move(tensorQueue.front());
+			tensorQueue.pop();
+			vector<tensorflow::Tensor> outputTensors;
+			output(tensorInput, outputTensors);
+			vector<model1Result> tempResults = resultOutput(outputTensors);
+			m_results.insert(m_results.end(), tempResults.begin(), tempResults.end());
+		}
+	}
+}

@@ -3,6 +3,7 @@
 TfBase::TfBase(std::string iniPath, std::string group)
 {
 	fileProp.initByiniFile(iniPath, group);
+	construct();
 }
 
 void TfBase::construct()

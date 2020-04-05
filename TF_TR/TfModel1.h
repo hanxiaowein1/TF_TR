@@ -48,7 +48,8 @@ public:
 	//1.Mat2Tensor(在父类中已经有实现)
 	//2.将batchsize的图像转为Tensor
 	virtual void convertMat2NeededDataInBatch(std::vector<cv::Mat>& imgs);
-
+	void processTfModel1(std::vector<cv::Mat>& imgs);
+	
 };
 
 #endif

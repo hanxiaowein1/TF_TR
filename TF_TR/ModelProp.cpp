@@ -60,7 +60,24 @@ void ModelProp::process(std::vector<cv::Mat>& imgs)
 			start = i + inputProp.batchsize;
 		}
 		std::vector<cv::Mat> tempImgs(iterBegin, iterEnd);
-		task(tempImgs);
+		processInBatch(tempImgs);
+	}
+}
+
+void ModelProp::process2(std::vector<cv::Mat>& imgs, std::function<void(std::vector<cv::Mat>&)> inFunc)
+{
+	int start = 0;
+	for (int i = 0; i < imgs.size(); i = i + inputProp.batchsize)
+	{
+		auto iterBegin = imgs.begin() + start;
+		std::vector<cv::Mat>::iterator iterEnd = imgs.end();
+		if (iterBegin + inputProp.batchsize < iterEnd)
+		{
+			iterEnd = iterBegin + inputProp.batchsize;
+			start = i + inputProp.batchsize;
+		}
+		std::vector<cv::Mat> tempImgs(iterBegin, iterEnd);
+		inFunc(tempImgs);
 	}
 }
 

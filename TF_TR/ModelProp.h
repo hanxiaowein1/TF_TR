@@ -43,6 +43,8 @@ public:
 	virtual ~ModelProp() {}
 	virtual void resizeImages(std::vector<cv::Mat>& imgs, int height, int width);
 	virtual void process(std::vector<cv::Mat>& imgs);
+	//以batchsize为单位，对imgs进行inFunc处理
+	virtual void process2(std::vector<cv::Mat>& imgs, std::function<void(std::vector<cv::Mat>&)> inFunc);
 	virtual void processInBatch(std::vector<cv::Mat>& imgs) = 0;
 	virtual void convertMat2NeededDataInBatch(std::vector<cv::Mat>& imgs) = 0;
 	virtual void clearResult() = 0;
