@@ -35,6 +35,7 @@ public:
 	virtual bool infer(vector<cv::Mat>& imgs);
 	virtual void constructNetwork() = 0;
 	virtual bool processInput(vector<cv::Mat>& imgs);
+	bool transformInMemory(vector<cv::Mat>& imgs, float* dstPtr);
 	virtual unsigned long long getMemory(std::string iniPath, std::string group);
 };
 

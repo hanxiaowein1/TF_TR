@@ -5,15 +5,13 @@ TrBase::TrBase(std::string iniPath, std::string group)
 	fileProp.initByiniFile(iniPath, group);
 }
 
-bool TrBase::processInput(vector<cv::Mat>& imgs)
+bool TrBase::transformInMemory(vector<cv::Mat>& imgs, float* dstPtr)
 {
 	if (imgs.size() == 0)
 		return false;
 	int width = imgs[0].cols;
 	int height = imgs[0].rows;
 	int channel = imgs[0].channels();
-	//将imgs放到input的hostBuffer里面
-	float* hostInputBuffer = static_cast<float*>((*mBuffer).getHostBuffer(fileProp.inputName));
 	//注意顺序，是CHW，不是HWC
 	for (int i = 0; i < imgs.size(); i++) {
 		for (int c = 0; c < channel; c++) {
@@ -21,12 +19,18 @@ bool TrBase::processInput(vector<cv::Mat>& imgs)
 				float* linePtr = (float*)imgs[i].ptr(h);
 				for (int w = 0; w < width; w++) {
 					//换算地址
-					hostInputBuffer[i * height * width * channel + c * height * width + h * width + w] = *(linePtr + w * 3 + c);
+					dstPtr[i * height * width * channel + c * height * width + h * width + w] = *(linePtr + w * 3 + c);
 				}
 			}
 		}
 	}
 	return true;
+}
+
+bool TrBase::processInput(vector<cv::Mat>& imgs)
+{
+	float* hostInputBuffer = static_cast<float*>((*mBuffer).getHostBuffer(fileProp.inputName));
+	return transformInMemory(imgs, hostInputBuffer);
 }
 
 bool TrBase::infer(vector<cv::Mat>& imgs)

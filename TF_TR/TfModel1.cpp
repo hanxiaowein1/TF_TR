@@ -6,6 +6,18 @@ TfModel1::TfModel1(string iniPath):
 	
 }
 
+TfModel1::~TfModel1()
+{
+	stopped.store(true);
+	cv_task.notify_all();
+	for (std::thread& thread : pool) {
+		if (thread.joinable())
+			thread.join();
+	}
+	//然后再把processTfModel1停掉
+	tensor_queue_cv.notify_all();
+}
+
 vector<model1Result> TfModel1::resultOutput(vector<tensorflow::Tensor>& tensors)
 {
 	vector<model1Result> retResults;
@@ -108,6 +120,9 @@ void TfModel1::convertMat2NeededDataInBatch(std::vector<cv::Mat>& imgs)
 void TfModel1::processTfModel1(std::vector<cv::Mat>& imgs)
 {
 	m_results.clear();
+	if (imgs.size() == 0)
+		return;
+	resizeImages(imgs, inputProp.height, inputProp.width);
 	std::function<void(std::vector<cv::Mat>&)> mat2tensor_fun = std::bind(&TfModel1::convertMat2NeededDataInBatch,this, std::placeholders::_1);
 	auto task = std::make_shared<std::packaged_task<void()>>
 		(std::bind(&TfModel1::process2, this, std::ref(imgs), mat2tensor_fun));
@@ -141,11 +156,13 @@ void TfModel1::processTfModel1(std::vector<cv::Mat>& imgs)
 		{
 			//等待
 			tensor_queue_cv.wait(myGuard, [this]{
-				if (tensorQueue.size() > 0)
+				if (tensorQueue.size() > 0||stopped.load())
 					return true;
 				else
 					return false;
 			});
+			if (stopped.load())
+				return;
 			tensorflow::Tensor tensorInput = std::move(tensorQueue.front());
 			tensorQueue.pop();
 			vector<tensorflow::Tensor> outputTensors;

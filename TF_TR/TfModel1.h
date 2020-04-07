@@ -33,13 +33,13 @@ private:
 	std::atomic<int> idlThrNum = 1;//判断线程有多少闲置;
 	std::atomic<int> totalThrNum = 1;//判断总共有多少线程;
 
-
 private:
 	vector<model1Result> resultOutput(vector<tensorflow::Tensor>& tensors);
 	void TensorToMat(tensorflow::Tensor mask, cv::Mat* dst);
 		
 public:
 	TfModel1(std::string iniPath);
+	~TfModel1();
 	virtual void processInBatch(std::vector<cv::Mat>& imgs);
 	virtual std::string getGroup() { return "TfModel1"; }
 	void createThreadPool();

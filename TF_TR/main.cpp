@@ -8,8 +8,8 @@ int main()
 {
 	_putenv_s("CUDA_VISIBLE_DEVICES", "0");
 	string iniPath = "../x64/Release/config.ini";
-	TfModel1* tfModel1 = new TfModel1(iniPath);
-	Model1* model1 = tfModel1;
+	TrModel1* trModel1 = new TrModel1(iniPath);
+	Model1* model1 = trModel1;
 	cv::Mat img = cv::imread("D:\\TEST_DATA\\image_for_test\\12_1.tif");
 	cv::resize(img, img, cv::Size(512, 512));
 	img.convertTo(img, CV_32F);
@@ -17,8 +17,8 @@ int main()
 	vector<cv::Mat> imgs;
 	imgs.emplace_back(img);
 	//model1->process(imgs);
-	tfModel1->createThreadPool();
-	tfModel1->processTfModel1(imgs);
+	trModel1->createThreadPool();
+	trModel1->processTrModel1(imgs);
 	vector<model1Result> results = model1->m_results;
 	system("pause");
 	return 0;
