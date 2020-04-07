@@ -21,15 +21,34 @@ void TrModel2::constructNetwork()
 	mParser->parse(fileProp.filepath.c_str(), *mNetwork, nvinfer1::DataType::kFLOAT);
 }
 
-vector<float> TrModel2::resultOutput(int size)
+vector<model2Result> TrModel2::resultOutput(int size)
 {
+	vector<model2Result> tempResults;
 	vector<float> scores;
 	if (!processOutput(size, scores))
+		return tempResults;
+	vector<vector<float>> tensors;
+	if (!processOutput2(size, tensors))
+		return tempResults;
+	for (int i = 0; i < size; i++)
 	{
-		return scores;
+		model2Result result;
+		result.score = scores[i];
+		result.tensor = tensors[i];
+		tempResults.emplace_back(result);
 	}
-	return scores;
+	return tempResults;
 }
+
+//vector<float> TrModel2::resultOutput(int size)
+//{
+//	vector<float> scores;
+//	if (!processOutput(size, scores))
+//	{
+//		return scores;
+//	}
+//	return scores;
+//}
 
 bool TrModel2::processOutput2(int size, vector<vector<float>>& tensors)
 {
@@ -59,20 +78,51 @@ bool TrModel2::processOutput(int size, vector<float>& scores)
 void TrModel2::processInBatch(std::vector<cv::Mat>& imgs)
 {
 	infer(imgs);
-	vector<float> tempScore = resultOutput(imgs.size());
-	vector<vector<float>> tensors;
-	processOutput2(imgs.size(), tensors);
-	//将结果放到m_results里
-	if (tempScore.size() != tensors.size())
+	vector<model2Result> tempResults = resultOutput(imgs.size());
+	m_results.insert(m_results.end(), tempResults.begin(), tempResults.end());
+}
+
+void TrModel2::convertMat2NeededDataInBatch(std::vector<cv::Mat>& imgs)
+{
+	int size = imgs.size();
+	if (size == 0)
+		return;
+	int height = imgs[0].rows;
+	int width = imgs[0].cols;
+	int channel = imgs[0].channels();
+	vector<float> neededData(height * width * channel * size);
+	transformInMemory(imgs, neededData.data());
+	//将其塞到队列里
+	std::unique_lock<std::mutex> myGuard(queue_lock);
+	tensorQueue.emplace(std::move(neededData));
+	myGuard.unlock();
+	//通过条件变量通知另一个等待线程：队列里有数据了！
+	tensor_queue_cv.notify_one();
+}
+
+
+bool TrModel2::checkQueueEmpty()
+{
+	if (tensorQueue.empty())
+		return true;
+	else
+		return false;
+}
+
+void TrModel2::processFirstDataInQueue()
+{
+	vector<float> neededData = std::move(tensorQueue.front());
+	tensorQueue.pop();
+	float* hostInputBuffer = static_cast<float*>((*mBuffer).getHostBuffer(fileProp.inputName));
+	std::memcpy(hostInputBuffer, neededData.data(), neededData.size() * sizeof(float));
+	mBuffer->copyInputToDevice();
+	int tensorBatch = neededData.size() /
+		(inputProp.height * inputProp.width * inputProp.channel);
+	if (!mContext->execute(tensorBatch, mBuffer->getDeviceBindings().data()))
 	{
-		cout << "processInBatch error\n";
 		return;
 	}
-	for (int i = 0; i < tempScore.size(); i++)
-	{
-		model2Result result;
-		result.score = tempScore[i];
-		result.tensor = tensors[i];
-		m_results.emplace_back(result);
-	}
+	mBuffer->copyOutputToHost();
+	vector<model2Result> tempResults = resultOutput(tensorBatch);
+	m_results.insert(m_results.end(), tempResults.begin(), tempResults.end());
 }

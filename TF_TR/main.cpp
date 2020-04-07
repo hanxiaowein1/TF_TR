@@ -18,7 +18,8 @@ int main()
 	imgs.emplace_back(img);
 	//model1->process(imgs);
 	trModel1->createThreadPool();
-	trModel1->processTrModel1(imgs);
+	//trModel1->processTrModel1(imgs);
+	trModel1->processDataConcurrency(imgs);
 	vector<model1Result> results = model1->m_results;
 	system("pause");
 	return 0;

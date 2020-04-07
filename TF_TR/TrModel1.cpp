@@ -75,38 +75,6 @@ void TrModel1::processInBatch(std::vector<cv::Mat>& imgs)
 	m_results.insert(m_results.end(), tempResults.begin(), tempResults.end());
 }
 
-void TrModel1::createThreadPool()
-{
-	int num = idlThrNum;
-	for (int size = 0; size < num; ++size)
-	{   //初始化线程数量
-		pool.emplace_back(
-			[this]
-			{ // 工作线程函数
-				while (!this->stopped.load())
-				{
-					std::function<void()> task;
-					{   // 获取一个待执行的 task
-						std::unique_lock<std::mutex> lock{ this->m_lock };// unique_lock 相比 lock_guard 的好处是：可以随时 unlock() 和 lock()
-						this->cv_task.wait(lock,
-							[this] {
-								return this->stopped.load() || !this->tasks.empty();
-							}
-						); // wait 直到有 task
-						if (this->stopped.load() && this->tasks.empty())
-							return;
-						task = std::move(this->tasks.front()); // 取一个 task
-						this->tasks.pop();
-					}
-					idlThrNum--;
-					task();
-					idlThrNum++;
-				}
-			}
-			);
-	}
-}
-
 void TrModel1::convertMat2NeededDataInBatch(std::vector<cv::Mat>& imgs)
 {
 	int size = imgs.size();
@@ -125,75 +93,29 @@ void TrModel1::convertMat2NeededDataInBatch(std::vector<cv::Mat>& imgs)
 	tensor_queue_cv.notify_one();
 }
 
-void TrModel1::processTrModel1(std::vector<cv::Mat>& imgs)
+bool TrModel1::checkQueueEmpty()
 {
-	if (imgs.size() == 0)
-		return;
-	resizeImages(imgs, inputProp.height, inputProp.width);
-	m_results.clear();
-	std::function<void(std::vector<cv::Mat>&)> mat2tensor_fun = std::bind(&TrModel1::convertMat2NeededDataInBatch, this, std::placeholders::_1);
-	auto task = std::make_shared<std::packaged_task<void()>>
-		(std::bind(&TrModel1::process2, this, std::ref(imgs), mat2tensor_fun));
-	std::unique_lock<std::mutex> myGuard(m_lock);
-	tasks.emplace(
-		[task]() {
-			(*task)();
-		}
-	);
-	myGuard.unlock();
-	cv_task.notify_one();
-
-	//开始处理
-	int loopTime = std::ceil(float(imgs.size()) / float(inputProp.batchsize));
-	//判断队列是否为空
-	for (int i = 0; i < loopTime; i++)
-	{
-		std::unique_lock<std::mutex> myGuard(queue_lock);
-		if (!tensorQueue.empty())
-		{
-			vector<float> neededData = std::move(tensorQueue.front());
-			tensorQueue.pop();
-			float* hostInputBuffer = static_cast<float*>((*mBuffer).getHostBuffer(fileProp.inputName));
-			std::memcpy(hostInputBuffer, neededData.data(), neededData.size());
-			mBuffer->copyInputToDevice();
-			int tensorBatch = neededData.size() / 
-				(inputProp.height * inputProp.width * inputProp.channel);
-			if (!mContext->execute(tensorBatch, mBuffer->getDeviceBindings().data()))
-			{
-				return;
-			}
-			mBuffer->copyOutputToHost();
-			vector<model1Result> tempResults = resultOutput(tensorBatch);
-			m_results.insert(m_results.end(), tempResults.begin(), tempResults.end());
-		}
-		else
-		{
-			//等待
-			tensor_queue_cv.wait(myGuard, [this] {
-				if (tensorQueue.size() > 0 || stopped.load())
-					return true;
-				else
-					return false;
-				});
-			if (stopped.load())
-				return;
-			vector<float> neededData = std::move(tensorQueue.front());
-			tensorQueue.pop();
-			float* hostInputBuffer = static_cast<float*>((*mBuffer).getHostBuffer(fileProp.inputName));
-			std::memcpy(hostInputBuffer, neededData.data(), neededData.size()*sizeof(float));
-			mBuffer->copyInputToDevice();
-
-			int tensorBatch = neededData.size() /
-				(inputProp.height * inputProp.width * inputProp.channel);
-			if (!mContext->execute(tensorBatch, mBuffer->getDeviceBindings().data()))
-			{
-				return;
-			}
-			mBuffer->copyOutputToHost();
-			vector<model1Result> tempResults = resultOutput(tensorBatch);
-			m_results.insert(m_results.end(), tempResults.begin(), tempResults.end());
-		}
-	}
+	if (tensorQueue.empty())
+		return true;
+	else
+		return false;
 }
 
+void TrModel1::processFirstDataInQueue()
+{
+	vector<float> neededData = std::move(tensorQueue.front());
+	tensorQueue.pop();
+	float* hostInputBuffer = static_cast<float*>((*mBuffer).getHostBuffer(fileProp.inputName));
+	std::memcpy(hostInputBuffer, neededData.data(), neededData.size() * sizeof(float));
+	mBuffer->copyInputToDevice();
+	int tensorBatch = neededData.size() /
+		(inputProp.height * inputProp.width * inputProp.channel);
+	if (!mContext->execute(tensorBatch, mBuffer->getDeviceBindings().data()))
+	{
+		return;
+	}
+	mBuffer->copyOutputToHost();
+	vector<model1Result> tempResults = resultOutput(tensorBatch);
+	m_results.insert(m_results.end(), tempResults.begin(), tempResults.end());
+}
 

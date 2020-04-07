@@ -9,8 +9,12 @@ public:
 	TfModel2(std::string iniPath);
 	virtual void processInBatch(std::vector<cv::Mat> &imgs);
 	virtual std::string getGroup() { return "TfModel2"; }
+	virtual bool checkQueueEmpty();
+	virtual void convertMat2NeededDataInBatch(std::vector<cv::Mat>& imgs);
+	virtual void processFirstDataInQueue();
 private:
 	vector<float> resultOutput(const tensorflow::Tensor& tensor);
+	vector<model2Result> resultOutput(const vector<tensorflow::Tensor>& tensors);
 };
 
 #endif
