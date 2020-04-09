@@ -39,6 +39,7 @@ class ModelProp
 {
 public:
 	ModelInputProp inputProp;
+	ModelFileProp fileProp;
 	std::mutex queue_lock;
 	std::condition_variable tensor_queue_cv;
 

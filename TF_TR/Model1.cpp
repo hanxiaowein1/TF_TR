@@ -7,7 +7,7 @@ Model1::Model1()
 
 Model1::Model1(std::string iniPath)
 {
-	inputProp.initByiniFile(iniPath, "Model1");
+	//inputProp.initByiniFile(iniPath, "Model1");
 }
 
 void Model1::clearResult()

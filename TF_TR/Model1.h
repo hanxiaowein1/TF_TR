@@ -4,7 +4,7 @@
 
 #include "ModelProp.h"
 
-class Model1 : public ModelProp
+class Model1
 {
 public:
 	std::vector<model1Result> m_results;

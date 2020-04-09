@@ -11,14 +11,13 @@
 #include <cuda_runtime_api.h>
 #include "opencv2/opencv.hpp"
 #include "ModelProp.h"
-class TrBase
+class TrBase : public ModelProp
 {
 public:
 	template <typename T>
 	using myUniquePtr = std::unique_ptr<T, samplesCommon::InferDeleter>;
 public:
 	std::queue<vector<float>> tensorQueue;//每一个元素都是以batchsize个图像的集合体
-	ModelFileProp fileProp;
 	//为了简化代码，将宽高通道属性移除，全部交给ModelProp来保证
 	//samplesCommon::UffSampleParams mParams;
 	myUniquePtr<nvinfer1::IBuilder> mBuilder{ nullptr };
@@ -37,6 +36,9 @@ public:
 	virtual bool processInput(vector<cv::Mat>& imgs);
 	bool transformInMemory(vector<cv::Mat>& imgs, float* dstPtr);
 	virtual unsigned long long getMemory(std::string iniPath, std::string group);
+
+	virtual bool checkQueueEmpty();
+	virtual void convertMat2NeededDataInBatch(std::vector<cv::Mat>& imgs);
 };
 
 

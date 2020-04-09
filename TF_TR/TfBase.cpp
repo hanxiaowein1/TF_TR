@@ -72,3 +72,33 @@ void TfBase::output(std::vector<cv::Mat>& imgs, std::vector<tensorflow::Tensor>&
 	output(tem_tensor_res, Output);
 }
 
+void TfBase::convertMat2NeededDataInBatch(std::vector<cv::Mat>& imgs)
+{
+	//1.先将imgs转为Tensor
+	int size = imgs.size();
+	if (size == 0)
+		return;
+	int height = imgs[0].rows;
+	int width = imgs[0].cols;
+	int channel = imgs[0].channels();
+	tensorflow::Tensor dstTensor(tensorflow::DataType::DT_FLOAT,
+		tensorflow::TensorShape({ size, height, width, channel }));
+	Mat2Tensor(imgs, dstTensor);
+	//2.取得锁
+	std::unique_lock<std::mutex> myGuard(queue_lock);
+	//3.将dstTensor放到队列里面
+	tensorQueue.emplace(std::move(dstTensor));
+	//4.解锁
+	myGuard.unlock();
+	//5.通过条件变量通知另一个等待线程：队列里有数据了！
+	tensor_queue_cv.notify_one();
+}
+
+bool TfBase::checkQueueEmpty()
+{
+	if (tensorQueue.empty())
+		return true;
+	else
+		return false;
+}
+

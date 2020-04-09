@@ -3,14 +3,17 @@
 #define _TRMODEL2_H_
 #include "TrBase.h"
 #include "Model2.h"
-class TrModel2 : public TrBase, public Model2
+class TrModel2 : public TrBase
 {
+public:
+	std::vector<model2Result> m_results;
 public:
 	TrModel2(std::string iniPath);
 	virtual std::string getGroup() { return "TrModel2"; }
-	virtual void convertMat2NeededDataInBatch(std::vector<cv::Mat>& imgs);
-	virtual bool checkQueueEmpty();
 	virtual void processFirstDataInQueue();
+	virtual void clearResult() {
+		m_results.clear();
+	}
 private:
 	virtual void constructNetwork();
 	bool processOutput(int size, vector<float>& scores);

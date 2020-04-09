@@ -2,7 +2,7 @@
 
 Model2::Model2(std::string iniPath)
 {
-	inputProp.initByiniFile(iniPath, "Model2");
+	//inputProp.initByiniFile(iniPath, "Model2");
 }
 
 void Model2::clearResult()

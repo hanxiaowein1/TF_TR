@@ -14,24 +14,24 @@
 //不如直接传入vector<cv::Mat>，然后在类的内部保持一个queue<tensorflow::Tensor>，
 //调用多线程将cv::Mat转为tensorflow::Tensor
 //那么外部逻辑就跑到了内部来了，更容易修改。
-class TfModel1 : public TfBase, public Model1
+class TfModel1 : public TfBase
 {
+public:
+	std::vector<model1Result> m_results;
 private:
 	vector<model1Result> resultOutput(vector<tensorflow::Tensor>& tensors);
 	void TensorToMat(tensorflow::Tensor mask, cv::Mat* dst);
-		
+
 public:
 	TfModel1(std::string iniPath);
 	~TfModel1();
 	virtual void processInBatch(std::vector<cv::Mat>& imgs);
 	virtual std::string getGroup() { return "TfModel1"; }
 
-	//先按照自己的思想走
-	//1.Mat2Tensor(在父类中已经有实现)
-	//2.将batchsize的图像转为Tensor
-	virtual void convertMat2NeededDataInBatch(std::vector<cv::Mat>& imgs);
-	virtual bool checkQueueEmpty();
 	virtual void processFirstDataInQueue();
+	virtual void clearResult() {
+		m_results.clear();
+	}
 };
 
 #endif

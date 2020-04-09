@@ -92,3 +92,29 @@ unsigned long long TrBase::getMemory(std::string iniPath, std::string group)
 {
 	return GetPrivateProfileInt(group.c_str(), "memory", 3, iniPath.c_str());
 }
+
+bool TrBase::checkQueueEmpty()
+{
+	if (tensorQueue.empty())
+		return true;
+	else
+		return false;
+}
+
+void TrBase::convertMat2NeededDataInBatch(std::vector<cv::Mat>& imgs)
+{
+	int size = imgs.size();
+	if (size == 0)
+		return;
+	int height = imgs[0].rows;
+	int width = imgs[0].cols;
+	int channel = imgs[0].channels();
+	vector<float> neededData(height * width * channel * size);
+	transformInMemory(imgs, neededData.data());
+	//将其塞到队列里
+	std::unique_lock<std::mutex> myGuard(queue_lock);
+	tensorQueue.emplace(std::move(neededData));
+	myGuard.unlock();
+	//通过条件变量通知另一个等待线程：队列里有数据了！
+	tensor_queue_cv.notify_one();
+}

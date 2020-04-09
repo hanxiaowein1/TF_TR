@@ -1,8 +1,10 @@
 #include "TrModel1.h"
 
-TrModel1::TrModel1(std::string iniPath):TrBase(iniPath, "TrModel1"),
-	Model1(iniPath)
+extern std::vector<cv::Point> getRegionPoints2(cv::Mat& mask, float threshold);
+
+TrModel1::TrModel1(std::string iniPath):TrBase(iniPath, "TrModel1")
 {
+	inputProp.initByiniFile(iniPath, "Model1");
 	unsigned long long memory = getMemory(iniPath, "TrModel1");
 	TrBase::build(memory, inputProp.batchsize);
 }
@@ -73,32 +75,6 @@ void TrModel1::processInBatch(std::vector<cv::Mat>& imgs)
 	infer(imgs);
 	vector<model1Result> tempResults = resultOutput(imgs.size());
 	m_results.insert(m_results.end(), tempResults.begin(), tempResults.end());
-}
-
-void TrModel1::convertMat2NeededDataInBatch(std::vector<cv::Mat>& imgs)
-{
-	int size = imgs.size();
-	if (size == 0)
-		return;
-	int height = imgs[0].rows;
-	int width = imgs[0].cols;
-	int channel = imgs[0].channels();
-	vector<float> neededData(height * width * channel * size);
-	transformInMemory(imgs, neededData.data());
-	//将其塞到队列里
-	std::unique_lock<std::mutex> myGuard(queue_lock);
-	tensorQueue.emplace(std::move(neededData));
-	myGuard.unlock();
-	//通过条件变量通知另一个等待线程：队列里有数据了！
-	tensor_queue_cv.notify_one();
-}
-
-bool TrModel1::checkQueueEmpty()
-{
-	if (tensorQueue.empty())
-		return true;
-	else
-		return false;
 }
 
 void TrModel1::processFirstDataInQueue()

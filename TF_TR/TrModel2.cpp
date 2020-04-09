@@ -1,8 +1,8 @@
 #include "TrModel2.h"
 
-TrModel2::TrModel2(std::string iniPath) : TrBase(iniPath, "TrModel2"),
-	Model2(iniPath)
+TrModel2::TrModel2(std::string iniPath) : TrBase(iniPath, "TrModel2")
 {
+	inputProp.initByiniFile(iniPath, "Model2");
 	//这个时候Model1已经构造完成，开始配置mParam
 	//paramConfig({ inputName }, outputNames, { channel, height, width }, batchsize);
 	unsigned long long memory = getMemory(iniPath, "TrModel2");
@@ -40,16 +40,6 @@ vector<model2Result> TrModel2::resultOutput(int size)
 	return tempResults;
 }
 
-//vector<float> TrModel2::resultOutput(int size)
-//{
-//	vector<float> scores;
-//	if (!processOutput(size, scores))
-//	{
-//		return scores;
-//	}
-//	return scores;
-//}
-
 bool TrModel2::processOutput2(int size, vector<vector<float>>& tensors)
 {
 	float* output2 = static_cast<float*>(mBuffer->getHostBuffer(fileProp.outputNames[1]));
@@ -80,33 +70,6 @@ void TrModel2::processInBatch(std::vector<cv::Mat>& imgs)
 	infer(imgs);
 	vector<model2Result> tempResults = resultOutput(imgs.size());
 	m_results.insert(m_results.end(), tempResults.begin(), tempResults.end());
-}
-
-void TrModel2::convertMat2NeededDataInBatch(std::vector<cv::Mat>& imgs)
-{
-	int size = imgs.size();
-	if (size == 0)
-		return;
-	int height = imgs[0].rows;
-	int width = imgs[0].cols;
-	int channel = imgs[0].channels();
-	vector<float> neededData(height * width * channel * size);
-	transformInMemory(imgs, neededData.data());
-	//将其塞到队列里
-	std::unique_lock<std::mutex> myGuard(queue_lock);
-	tensorQueue.emplace(std::move(neededData));
-	myGuard.unlock();
-	//通过条件变量通知另一个等待线程：队列里有数据了！
-	tensor_queue_cv.notify_one();
-}
-
-
-bool TrModel2::checkQueueEmpty()
-{
-	if (tensorQueue.empty())
-		return true;
-	else
-		return false;
 }
 
 void TrModel2::processFirstDataInQueue()

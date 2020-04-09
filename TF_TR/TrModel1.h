@@ -8,14 +8,17 @@
 #include <future>
 #include "TrBase.h"
 #include "Model1.h"
-class TrModel1 : public TrBase, public Model1
+class TrModel1 : public TrBase
 {
+public:
+	std::vector<model1Result> m_results;
 public:
 	TrModel1(std::string iniPath);
 	virtual std::string getGroup() { return "TrModel1"; }
-	virtual void convertMat2NeededDataInBatch(std::vector<cv::Mat>& imgs);
-	virtual bool checkQueueEmpty();
 	virtual void processFirstDataInQueue();
+	virtual void clearResult() {
+		m_results.clear();
+	};
 private:
 	virtual void constructNetwork();
 	vector<model1Result> resultOutput(int size);

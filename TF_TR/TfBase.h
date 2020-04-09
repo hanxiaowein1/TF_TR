@@ -34,12 +34,11 @@
 
 using namespace std;
 
-class TfBase
+class TfBase : public ModelProp
 {
 private:
 	std::unique_ptr<tensorflow::Session> m_session;
 public:
-	ModelFileProp fileProp;
 	std::queue<tensorflow::Tensor> tensorQueue;//每一个元素都是以batchsize个图像的集合体
 public:
 	//构造函数
@@ -52,6 +51,9 @@ public:
 	void output(std::vector<cv::Mat>& imgs, std::vector<tensorflow::Tensor>& Output);
 	//传入Tensor输入，得到Tensor输出(其中tensorInput是batchsize个图像的集合体)
 	void output(tensorflow::Tensor& tensorInput, vector<tensorflow::Tensor>& tensorOutput);
+
+	virtual void convertMat2NeededDataInBatch(std::vector<cv::Mat>& imgs);
+	virtual bool checkQueueEmpty();
 };
 
 #endif
