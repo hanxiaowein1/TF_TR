@@ -8,7 +8,7 @@ class TfModel2 : public TfBase
 public:
 	std::vector<model2Result> m_results;
 public:
-	TfModel2(std::string iniPath);
+	TfModel2(std::string iniPath, std::string group);
 	virtual void processInBatch(std::vector<cv::Mat> &imgs);
 	virtual std::string getGroup() { return "TfModel2"; }
 	virtual void processFirstDataInQueue();
@@ -16,8 +16,8 @@ public:
 		m_results.clear();
 	}
 private:
-	vector<float> resultOutput(const tensorflow::Tensor& tensor);
-	vector<model2Result> resultOutput(const vector<tensorflow::Tensor>& tensors);
+	vector<float> resultOutput(tensorflow::Tensor& tensor);
+	vector<model2Result> resultOutput(vector<tensorflow::Tensor>& tensors);
 };
 
 #endif

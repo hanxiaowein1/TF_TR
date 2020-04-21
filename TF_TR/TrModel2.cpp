@@ -1,11 +1,11 @@
 #include "TrModel2.h"
 
-TrModel2::TrModel2(std::string iniPath) : TrBase(iniPath, "TrModel2")
+TrModel2::TrModel2(std::string iniPath, std::string group) : TrBase(iniPath, group)
 {
 	inputProp.initByiniFile(iniPath, "Model2");
 	//这个时候Model1已经构造完成，开始配置mParam
 	//paramConfig({ inputName }, outputNames, { channel, height, width }, batchsize);
-	unsigned long long memory = getMemory(iniPath, "TrModel2");
+	unsigned long long memory = getMemory(iniPath, group);
 	TrBase::build(memory, inputProp.batchsize);
 }
 

@@ -12,6 +12,12 @@ bool TrBase::transformInMemory(vector<cv::Mat>& imgs, float* dstPtr)
 	int width = imgs[0].cols;
 	int height = imgs[0].rows;
 	int channel = imgs[0].channels();
+	for (int i = 0; i < imgs.size(); i++)
+	{
+		imgs[i].convertTo(imgs[i], CV_32F);
+		imgs[i] = (imgs[i] / 255 - 0.5) * 2;
+	}
+
 	//注意顺序，是CHW，不是HWC
 	for (int i = 0; i < imgs.size(); i++) {
 		for (int c = 0; c < channel; c++) {

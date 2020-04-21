@@ -16,6 +16,28 @@ struct model2Result
 	std::vector<float> tensor;//2048的向量
 };
 
+struct model3Result
+{
+	enum Type { TYPICAL = 0, ATYPICAL, NPLUS };
+	Type type;
+	float scores[3]{ 0 };
+	void iniType()
+	{
+		if (scores[0] >= scores[1] && scores[0] >= scores[2])
+		{
+			type = TYPICAL;
+		}
+		if (scores[1] >= scores[0] && scores[1] >= scores[2])
+		{
+			type = ATYPICAL;
+		}
+		if (scores[2] >= scores[0] && scores[2] >= scores[1])
+		{
+			type = NPLUS;
+		}
+	}
+};
+
 //一个512*512块的结果
 struct regionResult
 {

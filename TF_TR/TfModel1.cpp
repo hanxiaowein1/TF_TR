@@ -2,8 +2,8 @@
 
 extern std::vector<cv::Point> getRegionPoints2(cv::Mat& mask, float threshold);
 
-TfModel1::TfModel1(string iniPath):
-	TfBase(iniPath, "TfModel1")
+TfModel1::TfModel1(string iniPath, string group):
+	TfBase(iniPath, group)
 {
 	inputProp.initByiniFile(iniPath, "Model1");
 }

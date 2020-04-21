@@ -2,10 +2,10 @@
 
 extern std::vector<cv::Point> getRegionPoints2(cv::Mat& mask, float threshold);
 
-TrModel1::TrModel1(std::string iniPath):TrBase(iniPath, "TrModel1")
+TrModel1::TrModel1(std::string iniPath, std::string group):TrBase(iniPath, group)
 {
 	inputProp.initByiniFile(iniPath, "Model1");
-	unsigned long long memory = getMemory(iniPath, "TrModel1");
+	unsigned long long memory = getMemory(iniPath, group);
 	TrBase::build(memory, inputProp.batchsize);
 }
 

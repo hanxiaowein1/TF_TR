@@ -1,6 +1,6 @@
 #include "TfModel2.h"
 
-TfModel2::TfModel2(std::string iniPath):TfBase(iniPath, "TfModel2")
+TfModel2::TfModel2(std::string iniPath, std::string group):TfBase(iniPath, group)
 {
 	inputProp.initByiniFile(iniPath, "Model2");
 }
@@ -13,10 +13,15 @@ void TfModel2::processInBatch(std::vector<cv::Mat> &imgs)
 	m_results.insert(m_results.end(), tempResults.begin(), tempResults.end());
 }
 
-vector<model2Result> TfModel2::resultOutput(const vector<tensorflow::Tensor>& tensors)
+vector<model2Result> TfModel2::resultOutput(vector<tensorflow::Tensor>& tensors)
 {
 	vector<model2Result> tempResults;
 	vector<float> scores = resultOutput(tensors[0]);
+	cout << "tensors[1] size:" << tensors[1].dims() << endl;
+	for (int i = 0; i < tensors[1].dims(); i++)
+	{
+		cout << i << ": " << tensors[1].dim_size(i) << endl;
+	}
 	auto tensorValue = tensors[1].tensor<float, 2>();
 	int tempSize = scores.size();
 	const float* buffer_start = tensors[1].flat<float>().data();
@@ -31,7 +36,7 @@ vector<model2Result> TfModel2::resultOutput(const vector<tensorflow::Tensor>& te
 	return tempResults;
 }
 
-vector<float> TfModel2::resultOutput(const tensorflow::Tensor& tensor)
+vector<float> TfModel2::resultOutput(tensorflow::Tensor& tensor)
 {
 	vector<float> scores;
 	if (tensor.dims() != 2)

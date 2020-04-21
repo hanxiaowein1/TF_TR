@@ -13,7 +13,7 @@ class TrModel1 : public TrBase
 public:
 	std::vector<model1Result> m_results;
 public:
-	TrModel1(std::string iniPath);
+	TrModel1(std::string iniPath, std::string group);
 	virtual std::string getGroup() { return "TrModel1"; }
 	virtual void processFirstDataInQueue();
 	virtual void clearResult() {
